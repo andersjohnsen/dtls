@@ -32,6 +32,10 @@ func cipherSuiteForID(id cipherSuiteID) cipherSuite {
 		return &cipherSuiteTLSEcdheEcdsaWithAes256CbcSha{}
 	case cipherSuiteTLSEcdheRsaWithAes256CbcSha{}.ID():
 		return &cipherSuiteTLSEcdheRsaWithAes256CbcSha{}
+	case cipherSuiteTLSPskWithAes128Ccm{}.ID():
+		return &cipherSuiteTLSPskWithAes128Ccm{}
+	case cipherSuiteTLSPskWithAes128Ccm8{}.ID():
+		return &cipherSuiteTLSPskWithAes128Ccm8{}
 	}
 
 	return nil
@@ -41,6 +45,8 @@ func cipherSuiteForID(id cipherSuiteID) cipherSuite {
 // Preferred at the bottom
 func clientCipherSuites() []cipherSuite {
 	return []cipherSuite{
+		&cipherSuiteTLSPskWithAes128Ccm{},
+		&cipherSuiteTLSPskWithAes128Ccm8{},
 		&cipherSuiteTLSEcdheRsaWithAes256CbcSha{},
 		&cipherSuiteTLSEcdheEcdsaWithAes256CbcSha{},
 		&cipherSuiteTLSEcdheRsaWithAes128GcmSha256{},
