@@ -69,6 +69,8 @@ type Conn struct {
 	handshakeCompleted      chan bool
 
 	handshakeDone bool
+	initiated     time.Time
+	rtt           time.Duration
 
 	connErr atomic.Value
 	log     logging.LeveledLogger
@@ -279,6 +281,11 @@ func (c *Conn) ExportKeyingMaterial(label string, context []byte, length int) ([
 		seed = append(append(seed, remoteRandom...), localRandom...)
 	}
 	return prfPHash(c.state.masterSecret, seed, length, c.state.cipherSuite.hashFunc())
+}
+
+// RTT returns the Round-Trip-Time measured while performing the handshake.
+func (c *Conn) RTT() time.Duration {
+	return c.rtt
 }
 
 func (c *Conn) internalSend(pkt *recordLayer, shouldEncrypt bool) {

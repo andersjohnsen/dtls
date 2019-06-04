@@ -3,6 +3,7 @@ package dtls
 import (
 	"bytes"
 	"fmt"
+	"time"
 )
 
 func serverHandshakeHandler(c *Conn) error {
@@ -18,6 +19,7 @@ func serverHandshakeHandler(c *Conn) error {
 				if !bytes.Equal(c.cookie, h.cookie) {
 					return errCookieMismatch
 				}
+				c.initiated = time.Now()
 				c.state.localSequenceNumber = 1
 				if err := c.currFlight.set(flight4); err != nil {
 					return err
@@ -25,6 +27,7 @@ func serverHandshakeHandler(c *Conn) error {
 				break
 			}
 
+			c.rtt = time.Since(c.initiated)
 			c.state.remoteRandom = h.random
 
 			if _, ok := findMatchingCipherSuite(h.cipherSuites, c.localCipherSuites); !ok {
