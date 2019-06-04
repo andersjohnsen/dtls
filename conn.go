@@ -68,6 +68,8 @@ type Conn struct {
 	flightHandler           flightHandler
 	handshakeCompleted      chan bool
 
+	handshakeDone bool
+
 	connErr atomic.Value
 	log     logging.LeveledLogger
 }
@@ -367,6 +369,10 @@ func (c *Conn) handleIncomingPacket(buf []byte) error {
 	if err != nil {
 		return err
 	} else if isHandshake {
+		if c.handshakeDone {
+			return fmt.Errorf("handshake message after completed handshake")
+		}
+
 		newHandshakeMessage := false
 		for out := c.fragmentBuffer.pop(); out != nil; out = c.fragmentBuffer.pop() {
 			rawHandshake := &handshake{}

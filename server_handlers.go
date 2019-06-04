@@ -416,6 +416,7 @@ func serverFlightHandler(c *Conn) (bool, error) {
 		}, true)
 
 		// TODO: Better way to end handshake
+		c.handshakeDone = true
 		c.signalHandshakeComplete()
 		return true, nil
 	default:
