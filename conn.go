@@ -215,7 +215,7 @@ func (c *Conn) Write(p []byte) (int, error) {
 		content: &applicationData{
 			data: p,
 		},
-	}, c.state.cipherSuite != nil)
+	}, true)
 	c.state.localSequenceNumber++
 
 	return len(p), nil
@@ -426,17 +426,19 @@ func (c *Conn) notify(level alertLevel, desc alertDescription) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	c.internalSend(&recordLayer{
-		recordLayerHeader: recordLayerHeader{
-			epoch:           c.getLocalEpoch(),
-			sequenceNumber:  c.state.localSequenceNumber,
-			protocolVersion: protocolVersion1_2,
-		},
-		content: &alert{
-			alertLevel:       level,
-			alertDescription: desc,
-		},
-	}, true)
+	if c.state.cipherSuite != nil {
+		c.internalSend(&recordLayer{
+			recordLayerHeader: recordLayerHeader{
+				epoch:           c.getLocalEpoch(),
+				sequenceNumber:  c.state.localSequenceNumber,
+				protocolVersion: protocolVersion1_2,
+			},
+			content: &alert{
+				alertLevel:       level,
+				alertDescription: desc,
+			},
+		}, true)
+	}
 
 	c.state.localSequenceNumber++
 }
@@ -480,14 +482,21 @@ func (c *Conn) startHandshakeOutbound() {
 }
 
 func (c *Conn) stopWithError(err error) {
+	if c.connErr.Load() != nil {
+		return
+	}
+
+	c.connErr.Store(struct{ error }{err})
+
+	c.notify(alertLevelFatal, alertCloseNotify)
+
 	if connErr := c.nextConn.Close(); connErr != nil {
 		if err != ErrConnClosed {
 			connErr = fmt.Errorf("%v\n%v", err, connErr)
 		}
-		err = connErr
-	}
 
-	c.connErr.Store(struct{ error }{err})
+		c.connErr.Store(struct{ error }{connErr})
+	}
 
 	c.workerTicker.Stop()
 
