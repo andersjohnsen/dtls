@@ -35,6 +35,9 @@ func (l *Listener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: This will block all other incoming connections, until handshake is completed. Should
+	// me moved into parent.Accept().
 	return Server(c, l.config)
 }
 

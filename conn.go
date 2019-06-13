@@ -215,7 +215,7 @@ func (c *Conn) Write(p []byte) (int, error) {
 		content: &applicationData{
 			data: p,
 		},
-	}, true)
+	}, c.state.cipherSuite != nil)
 	c.state.localSequenceNumber++
 
 	return len(p), nil
@@ -360,18 +360,7 @@ func (c *Conn) handleIncomingPacket(buf []byte) error {
 
 	if h.epoch != 0 {
 		if c.state.cipherSuite == nil {
-			c.log.Debug("handleIncoming: Handshake not finished, dropping packet")
-			// Force the client to reconnect and issue handshake.
-			c.internalSend(&recordLayer{
-				recordLayerHeader: recordLayerHeader{
-					protocolVersion: protocolVersion1_2,
-				},
-				content: &alert{
-					alertLevel:       alertLevelFatal,
-					alertDescription: alertCloseNotify,
-				},
-			}, false)
-			return nil
+			return fmt.Errorf("handleIncoming: Handshake not finished, dropping packet")
 		}
 
 		var err error
